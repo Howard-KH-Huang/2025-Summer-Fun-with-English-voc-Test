@@ -12,6 +12,12 @@
     .incorrect { color: red; }
     .unanswered { color: orange; }
     .hidden { display: none; }
+    .overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8); color: white;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 24px; z-index: 9999;
+    }
     table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
     th { background-color: #f2f2f2; }
     #userInfo input { margin: 5px 0; }
@@ -30,7 +36,7 @@
 
   <div id="quizSection" class="hidden">
     <p id="timer">Time left: 15:00</p>
-    <p id="progressIndicator">已完成 0 題</p>
+    <p id="progressIndicator">已完成 0 / 25 題</p>
     <form id="quizForm"></form>
     <button id="submitBtn">Submit</button>
     <div id="result" class="hidden"></div>
@@ -45,7 +51,13 @@
   <script>
     const words = ['a','look at','bear','bird','black sheep','black','blue horse','blue','brown bear','brown','cat','duck','frog','gold','goldfish','gray','green','horse','me','orange','purple cat','purple','red bird','red','sheep','teacher','what','white dog','yellow duck','yellow'];
     const zh = ['一個','看著','熊','鳥','黑色的綿羊','黑色','藍色的馬','藍色','棕色的熊','棕色','貓咪','鴨子','青蛙','金色','金魚','灰色','綠色','馬','我','橘色','紫色的貓咪','紫色','紅色的鳥','紅色','綿羊','老師','什麼','白色的小狗','黃色的鴨子','黃色'];
-    const items = words.map((w, i) => ({ audio: `chunk_${String(i + 1).padStart(2, '0')}.mp3`, word: w, zh: zh[i] }));
+
+
+    const items = words.map((w, i) => ({
+      audio: `chunk_${String(i + 1).padStart(2, '0')}.mp3`,
+      word: w,
+      zh: zh[i]
+    }));
 
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -57,8 +69,7 @@
 
     let selectedItems, choiceItems, typingItems, zhItems;
     let timerStartTime, totalTime = 15 * 60;
-    let interval, currentAudio = null;
-    const playCounts = {};
+    let interval;
 
     document.getElementById('startBtn').addEventListener('click', () => {
       const userClass = document.getElementById('userClass').value.trim();
@@ -78,10 +89,10 @@
       timerStartTime = Date.now();
       const timerElement = document.getElementById('timer');
       interval = setInterval(() => {
-        totalTime--;
         const minutes = Math.floor(totalTime / 60);
         const seconds = totalTime % 60;
         timerElement.textContent = `Time left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        totalTime--;
         if (totalTime < 0) {
           clearInterval(interval);
           document.getElementById('submitBtn').click();
@@ -90,14 +101,14 @@
     }
 
     function updateProgress() {
-      const total = document.querySelectorAll('.question').length;
+      const total = 25;
       const answered = [...Array(total).keys()].filter(index => {
         const group = document.querySelectorAll(`[name='answer_${index}']`);
         if (!group.length) return false;
         if (group[0].type === 'radio') return [...group].some(g => g.checked);
         return group[0].value.trim() !== '';
       });
-      document.getElementById("progressIndicator").textContent = `已完成 ${answered.length} 題`;
+      document.getElementById("progressIndicator").textContent = `已完成 ${answered.length} / ${total} 題`;
     }
 
     function buildQuiz() {
@@ -116,28 +127,15 @@
         const audio = document.createElement('audio');
         audio.src = item.audio;
         audio.controls = true;
-        audio.preload = "none";
-
+        let playCount = 0;
         audio.addEventListener('play', () => {
-          if (currentAudio && currentAudio !== audio) {
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
-          }
-          currentAudio = audio;
-          const key = audio.src;
-          playCounts[key] = (playCounts[key] || 0) + 1;
-          if (playCounts[key] > 2) {
+          if (playCount >= 2) {
             audio.pause();
             audio.currentTime = 0;
             alert('此題音檔已播放兩次，無法再播放。');
+          } else {
+            playCount++;
           }
-        });
-
-        audio.addEventListener('error', () => {
-          const errMsg = document.createElement('div');
-          errMsg.textContent = `⚠️ 無法載入音檔：${audio.src}`;
-          errMsg.style.color = 'red';
-          div.appendChild(errMsg);
         });
 
         div.appendChild(document.createTextNode(`Q${index + 1}: `));
@@ -167,7 +165,6 @@
           input.type = 'text';
           input.name = `answer_${index}`;
           input.placeholder = 'Type your answer';
-          input.pattern = "[A-Za-z ]+";
           input.addEventListener('input', updateProgress);
           div.appendChild(input);
         }
@@ -193,7 +190,8 @@
       const timeSpent = `${minutes}分${seconds}秒`;
 
       let score = 0, correctCount = 0, incorrectCount = 0, unansweredCount = 0;
-      let wrongItems = [], wrongWords = [];
+      let wrongItems = [];
+      let wrongWords = [];
 
       [...choiceItems, ...typingItems, ...zhItems].forEach((item, index) => {
         const inputs = document.querySelectorAll(`[name='answer_${index}']`);
@@ -206,7 +204,7 @@
         }
 
         const feedback = document.getElementById(`feedback_${index}`);
-        const correctAnswer = (index < 20) ? item.word : item.zh;
+        let correctAnswer = (index < 20) ? item.word : item.zh;
 
         if (!userAnswer) {
           unansweredCount++;
@@ -257,7 +255,7 @@
       document.getElementById('reviewSection').classList.remove('hidden');
 
       const payload = {
-        userClass: document.getElementById('userClass').value,
+        class: document.getElementById('userClass').value,
         number: document.getElementById('userNumber').value,
         name: document.getElementById('userName').value,
         score: score,
