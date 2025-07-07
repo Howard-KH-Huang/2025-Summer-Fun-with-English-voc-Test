@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2025 Summer Fun with English-English Vocabulary Online Test (Intermediate)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .question { margin-bottom: 20px; }
+    .feedback { font-weight: bold; }
+    .correct { color: green; }
+    .incorrect { color: red; }
+    .unanswered { color: orange; }
+    .hidden { display: none; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+    th { background-color: #f2f2f2; }
+    #userInfo input { margin: 5px 0; }
+    #userInfo label { display: block; margin-bottom: 10px; }
+    #retryBtn { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>2025 Summer Fun with English-English Vocabulary Online Test (Intermediate)</h1>
+  <div id="userInfo">
+    <label>Class: <input type="text" id="userClass" required /></label>
+    <label>Number: <input type="text" id="userNumber" required /></label>
+    <label>Name: <input type="text" id="userName" required /></label>
+    <button id="startBtn">Start Quiz</button>
+  </div>
+
+  <div id="quizSection" class="hidden">
+    <p id="timer">Time left: 15:00</p>
+    <p id="progressIndicator">已完成 0 題</p>
+    <form id="quizForm"></form>
+    <button id="submitBtn">Submit</button>
+    <div id="result" class="hidden"></div>
+    <div id="scoreTable"></div>
+    <div id="reviewSection" class="hidden">
+      <h3>錯誤題目回顧</h3>
+      <div id="reviewContent"></div>
+    </div>
+    <button id="retryBtn">🔁 重新測驗</button>
+  </div>
+
+  <script>
+    const words = ['a','look at','bear','bird','black sheep','black','blue horse','blue','brown bear','brown','cat','duck','frog','gold','goldfish','gray','green','horse','me','orange','purple cat','purple','red bird','red','sheep','teacher','what','white dog','yellow duck','yellow'];
+    const zh = ['一個','看著','熊','鳥','黑色的綿羊','黑色','藍色的馬','藍色','棕色的熊','棕色','貓咪','鴨子','青蛙','金色','金魚','灰色','綠色','馬','我','橘色','紫色的貓咪','紫色','紅色的鳥','紅色','綿羊','老師','什麼','白色的小狗','黃色的鴨子','黃色'];
+    const items = words.map((w, i) => ({ audio: `chunk_${String(i + 1).padStart(2, '0')}.mp3`, word: w, zh: zh[i] }));
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    let selectedItems, choiceItems, typingItems, zhItems;
+    let timerStartTime, totalTime = 15 * 60;
+    let interval, currentAudio = null;
+    const playCounts = {};
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      const userClass = document.getElementById('userClass').value.trim();
+      const userNumber = document.getElementById('userNumber').value.trim();
+      const userName = document.getElementById('userName').value.trim();
+      if (!userClass || !userNumber || !userName) {
+        alert('請完整填寫班級、座號與姓名再開始測驗。');
+        return;
+      }
+      document.getElementById('userInfo').classList.add('hidden');
+      document.getElementById('quizSection').classList.remove('hidden');
+      startTimer();
+      buildQuiz();
+    });
+
+    function startTimer() {
+      timerStartTime = Date.now();
+      const timerElement = document.getElementById('timer');
+      interval = setInterval(() => {
+        totalTime--;
+        const minutes = Math.floor(totalTime / 60);
+        const seconds = totalTime % 60;
+        timerElement.textContent = `Time left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        if (totalTime < 0) {
+          clearInterval(interval);
+          document.getElementById('submitBtn').click();
+        }
+      }, 1000);
+    }
+
+    function updateProgress() {
+      const total = document.querySelectorAll('.question').length;
+      const answered = [...Array(total).keys()].filter(index => {
+        const group = document.querySelectorAll(`[name='answer_${index}']`);
+        if (!group.length) return false;
+        if (group[0].type === 'radio') return [...group].some(g => g.checked);
+        return group[0].value.trim() !== '';
+      });
+      document.getElementById("progressIndicator").textContent = `已完成 ${answered.length} 題`;
+    }
+
+    function buildQuiz() {
+      selectedItems = shuffle([...items]).slice(0, 25);
+      choiceItems = selectedItems.slice(0, 10);
+      typingItems = selectedItems.slice(10, 20);
+      zhItems = selectedItems.slice(20);
+
+      const quizForm = document.getElementById('quizForm');
+      quizForm.innerHTML = '';
+
+      [...choiceItems, ...typingItems, ...zhItems].forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'question';
+
+        const audio = document.createElement('audio');
+        audio.src = item.audio;
+        audio.controls = true;
+        audio.preload = "none";
+
+        audio.addEventListener('play', () => {
+          if (currentAudio && currentAudio !== audio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+          }
+          currentAudio = audio;
+          const key = audio.src;
+          playCounts[key] = (playCounts[key] || 0) + 1;
+          if (playCounts[key] > 2) {
+            audio.pause();
+            audio.currentTime = 0;
+            alert('此題音檔已播放兩次，無法再播放。');
+          }
+        });
+
+        audio.addEventListener('error', () => {
+          const errMsg = document.createElement('div');
+          errMsg.textContent = `⚠️ 無法載入音檔：${audio.src}`;
+          errMsg.style.color = 'red';
+          div.appendChild(errMsg);
+        });
+
+        div.appendChild(document.createTextNode(`Q${index + 1}: `));
+        div.appendChild(audio);
+        div.appendChild(document.createElement('br'));
+
+        if (index < 10 || index >= 20) {
+          const options = shuffle(
+            index < 10
+              ? [item.word, ...shuffle(items.filter(i => i.word !== item.word)).slice(0, 3).map(i => i.word)]
+              : [item.zh, ...shuffle(items.filter(i => i.zh !== item.zh)).slice(0, 3).map(i => i.zh)]
+          );
+          options.forEach(option => {
+            const label = document.createElement('label');
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = `answer_${index}`;
+            radio.value = option;
+            radio.addEventListener('change', updateProgress);
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(option));
+            div.appendChild(label);
+            div.appendChild(document.createElement('br'));
+          });
+        } else {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.name = `answer_${index}`;
+          input.placeholder = 'Type your answer';
+          input.pattern = "[A-Za-z ]+";
+          input.addEventListener('input', updateProgress);
+          div.appendChild(input);
+        }
+
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+        feedback.id = `feedback_${index}`;
+        div.appendChild(feedback);
+        quizForm.appendChild(div);
+      });
+
+      updateProgress();
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      document.getElementById('submitBtn').disabled = true;
+      clearInterval(interval);
+      document.getElementById('timer').textContent += '（已提交）';
+
+      const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      const timeSpent = `${minutes}分${seconds}秒`;
+
+      let score = 0, correctCount = 0, incorrectCount = 0, unansweredCount = 0;
+      let wrongItems = [], wrongWords = [];
+
+      [...choiceItems, ...typingItems, ...zhItems].forEach((item, index) => {
+        const inputs = document.querySelectorAll(`[name='answer_${index}']`);
+        let userAnswer = '';
+        if (inputs.length > 1) {
+          const checked = [...inputs].find(r => r.checked);
+          if (checked) userAnswer = checked.value.trim();
+        } else if (inputs.length === 1) {
+          userAnswer = inputs[0].value.trim();
+        }
+
+        const feedback = document.getElementById(`feedback_${index}`);
+        const correctAnswer = (index < 20) ? item.word : item.zh;
+
+        if (!userAnswer) {
+          unansweredCount++;
+          feedback.textContent = `? 未作答，正確答案為：${item.word}（${item.zh}）`;
+          feedback.className = 'feedback unanswered';
+          wrongItems.push(item);
+          wrongWords.push(item.word);
+        } else if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+          score += 4;
+          correctCount++;
+          feedback.textContent = '✅ 答對';
+          feedback.className = 'feedback correct';
+        } else {
+          incorrectCount++;
+          feedback.textContent = `❌ 答錯，正確答案為：${item.word}（${item.zh}）`;
+          feedback.className = 'feedback incorrect';
+          wrongItems.push(item);
+          wrongWords.push(item.word);
+        }
+      });
+
+      document.getElementById('result').classList.remove('hidden');
+      document.getElementById('result').textContent = `你獲得 ${score} 分。`;
+
+      document.getElementById('scoreTable').innerHTML = `
+        <h3>測驗結果分析</h3>
+        <table>
+          <tr><th>類別</th><th>數量</th></tr>
+          <tr><td>答對</td><td>${correctCount}</td></tr>
+          <tr><td>答錯</td><td>${incorrectCount}</td></tr>
+          <tr><td>未作答</td><td>${unansweredCount}</td></tr>
+          <tr><td>總分</td><td>${score}</td></tr>
+          <tr><td>作答時間</td><td>${timeSpent}</td></tr>
+        </table>`;
+
+      const review = document.getElementById('reviewContent');
+      review.innerHTML = '';
+      wrongItems.forEach((item, idx) => {
+        const div = document.createElement('div');
+        const audio = document.createElement('audio');
+        audio.src = item.audio;
+        audio.controls = true;
+        div.appendChild(document.createTextNode(`錯題 ${idx + 1}: `));
+        div.appendChild(audio);
+        div.appendChild(document.createTextNode(` 正確答案：${item.zh}（${item.word}）`));
+        review.appendChild(div);
+      });
+      document.getElementById('reviewSection').classList.remove('hidden');
+
+      const payload = {
+        userClass: document.getElementById('userClass').value,
+        number: document.getElementById('userNumber').value,
+        name: document.getElementById('userName').value,
+        score: score,
+        correct: correctCount,
+        incorrect: incorrectCount,
+        unanswered: unansweredCount,
+        timeSpent: timeSpent,
+        wrongWords: wrongWords.join(', ')
+      };
+
+      fetch('https://script.google.com/macros/s/AKfycbwdwpvbDJ325iwjgHhG9PatuKsMpqFNzhtgUuJsNVw2xEic7eDZuFykkN2qpJI_MDKn/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    });
+
+    document.getElementById('retryBtn').addEventListener('click', () => {
+      location.reload();
+    });
+  </script>
+</body>
+</html>
