@@ -47,7 +47,6 @@
     const zh = ['一個','看著','熊','鳥','黑色的綿羊','黑色','藍色的馬','藍色','棕色的熊','棕色','貓咪','鴨子','青蛙','金色','金魚','灰色','綠色','馬','我','橘色','紫色的貓咪','紫色','紅色的鳥','紅色','綿羊','老師','什麼','白色的小狗','黃色的鴨子','黃色','湯匙','餐巾','果汁杯','甜點湯匙','刀子','水杯','叉子','沙拉盤子','麵包盤子','餐盤','沙拉叉子','左手','右手','放入','拿出來','搖一搖/搖動','轉身/轉一圈','光芒','頭','腳'];
     const items = words.map((w, i) => ({ audio: `chunk_${String(i + 1).padStart(2, '0')}.mp3`, word: w, zh: zh[i] }));
 
-
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -269,7 +268,7 @@
         wrongWords: wrongWords.join(', ')
       };
 
-      fetch('https://script.google.com/macros/s/AKfycbyk8f0RUMW2ociqzPfLJmu_kWGSi1BeZQhnA0lBLBMXzy1yyMAuIiGRG_g610SxRSN1/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbwdwpvbDJ325iwjgHhG9PatuKsMpqFNzhtgUuJsNVw2xEic7eDZuFykkN2qpJI_MDKn/exec', {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
