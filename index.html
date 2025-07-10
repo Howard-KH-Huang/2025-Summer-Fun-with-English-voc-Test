@@ -271,6 +271,7 @@
 
       fetch('https://script.google.com/macros/s/AKfycbyk8f0RUMW2ociqzPfLJmu_kWGSi1BeZQhnA0lBLBMXzy1yyMAuIiGRG_g610SxRSN1/exec', {
         method: 'POST',
+        mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
