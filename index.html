@@ -257,26 +257,21 @@
       });
       document.getElementById('reviewSection').classList.remove('hidden');
 
-      const payload = {
-        userClass: document.getElementById('userClass').value,
-        number: document.getElementById('userNumber').value,
-        name: document.getElementById('userName').value,
-        score: score,
-        correct: correctCount,
-        incorrect: incorrectCount,
-        unanswered: unansweredCount,
-        timeSpent: timeSpent,
-        wrongWords: wrongWords.join(', ')
-      };
+const formData = new FormData();
+formData.append('userClass', document.getElementById('userClass').value);
+formData.append('number', document.getElementById('userNumber').value);
+formData.append('name', document.getElementById('userName').value);
+formData.append('score', score);
+formData.append('correct', correctCount);
+formData.append('incorrect', incorrectCount);
+formData.append('unanswered', unansweredCount);
+formData.append('timeSpent', timeSpent);
+formData.append('wrongWords', wrongWords.join(', '));
 
-      fetch('https://script.google.com/macros/s/AKfycbyk8f0RUMW2ociqzPfLJmu_kWGSi1BeZQhnA0lBLBMXzy1yyMAuIiGRG_g610SxRSN1/exec', {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    });
-
+fetch('https://script.google.com/macros/s/AKfycbyk8f0RUMW2ociqzPfLJmu_kWGSi1BeZQhnA0lBLBMXzy1yyMAuIiGRG_g610SxRSN1/exec', {
+  method: 'POST',
+  body: formData
+});
     document.getElementById('retryBtn').addEventListener('click', () => {
       location.reload();
     });
