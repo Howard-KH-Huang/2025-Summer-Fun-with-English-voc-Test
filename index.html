@@ -1,10 +1,9 @@
-<!-- 📄 HTML - English Vocabulary Online Test (含回傳 Google Sheets 功能) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>English Vocabulary Online Test</title>
+  <title>2025 Summer Fun with English-English Vocabulary Online Test (Intermediate)</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     .question { margin-bottom: 20px; }
@@ -21,7 +20,7 @@
   </style>
 </head>
 <body>
-  <h1>English Vocabulary Online Test</h1>
+  <h1>2025 Summer Fun with English-English Vocabulary Online Test (Intermediate)</h1>
   <div id="userInfo">
     <label>班級 Class: <input type="text" id="userClass" required /></label>
     <label>座號 Number: <input type="text" id="userNumber" required /></label>
@@ -31,8 +30,9 @@
 
   <div id="quizSection" class="hidden">
     <p id="timer">Time left: 15:00</p>
+    <p id="progressIndicator">已完成 0 題</p>
     <form id="quizForm"></form>
-    <button id="submitBtn">Submit</button>
+    <button id="submitBtn">作答完成送出答案 Submit</button>
     <div id="result" class="hidden"></div>
     <div id="scoreTable"></div>
     <div id="reviewSection" class="hidden">
@@ -43,10 +43,10 @@
   </div>
 
   <script>
-    const items = [...Array(50)].map((_, i) => ({
-      audio: `chunk_${String(i + 1).padStart(2, '0')}.mp3`,
-      word: ['pet','pit','jet','net','sit','hit','fix','fox','six','mix','ox','box','bear','monkey','tiger','lion','horse','goat','sing','dance','read','write','draw','can','can\'t','Goodbye.','See you.','I\'m sorry.','That\'s OK.','do','for','them','How about...?','show','have','great','Time to go home.','today','mom','mommy','mother','card','flower','cake','Happy Mother\'s Day.','on','Don\'t worry.','let\'s','here is...','I love you.'][i]
-    }));
+    const words = ['a','look at','bear','bird','black sheep','black','blue horse','blue','brown bear','brown','cat','duck','frog','gold','goldfish','gray','green','horse','me','orange','purple cat','purple','red bird','red','sheep','teacher','what','white dog','yellow duck','yellow','spoon','napkin','juice cup','dessert spoon','knife','water cup','fork','salad plate','bread plate','meal plate','salad fork','left hand','right hand','put in','put out','shake','turn around','light','head','foot'];
+    const zh = ['一個','看著','熊','鳥','黑色的綿羊','黑色','藍色的馬','藍色','棕色的熊','棕色','貓咪','鴨子','青蛙','金色','金魚','灰色','綠色','馬','我','橘色','紫色的貓咪','紫色','紅色的鳥','紅色','綿羊','老師','什麼','白色的小狗','黃色的鴨子','黃色','湯匙','餐巾','果汁杯','甜點湯匙','刀子','水杯','叉子','沙拉盤子','麵包盤子','餐盤','沙拉叉子','左手','右手','放入','拿出來','搖一搖/搖動','轉身/轉一圈','光芒','頭','腳'];
+    const items = words.map((w, i) => ({ audio: `chunk_${String(i + 1).padStart(2, '0')}.mp3`, word: w, zh: zh[i] }));
+
 
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -56,8 +56,10 @@
       return array;
     }
 
-    let selectedItems, choiceItems, typingItems, timerStartTime, totalTime = 15 * 60;
-    let interval;
+    let selectedItems, choiceItems, typingItems, zhItems;
+    let timerStartTime, totalTime = 15 * 60;
+    let interval, currentAudio = null;
+    const playCounts = {};
 
     document.getElementById('startBtn').addEventListener('click', () => {
       const userClass = document.getElementById('userClass').value.trim();
@@ -77,10 +79,10 @@
       timerStartTime = Date.now();
       const timerElement = document.getElementById('timer');
       interval = setInterval(() => {
+        totalTime--;
         const minutes = Math.floor(totalTime / 60);
         const seconds = totalTime % 60;
         timerElement.textContent = `Time left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        totalTime--;
         if (totalTime < 0) {
           clearInterval(interval);
           document.getElementById('submitBtn').click();
@@ -88,44 +90,74 @@
       }, 1000);
     }
 
+    function updateProgress() {
+      const total = document.querySelectorAll('.question').length;
+      const answered = [...Array(total).keys()].filter(index => {
+        const group = document.querySelectorAll(`[name='answer_${index}']`);
+        if (!group.length) return false;
+        if (group[0].type === 'radio') return [...group].some(g => g.checked);
+        return group[0].value.trim() !== '';
+      });
+      document.getElementById("progressIndicator").textContent = `已完成 ${answered.length} 題`;
+    }
+
     function buildQuiz() {
-      selectedItems = shuffle([...items]).slice(0, 20);
+      selectedItems = shuffle([...items]).slice(0, 25);
       choiceItems = selectedItems.slice(0, 10);
-      typingItems = selectedItems.slice(10);
+      typingItems = selectedItems.slice(10, 20);
+      zhItems = selectedItems.slice(20);
+
       const quizForm = document.getElementById('quizForm');
       quizForm.innerHTML = '';
 
-      [...choiceItems, ...typingItems].forEach((item, index) => {
+      [...choiceItems, ...typingItems, ...zhItems].forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'question';
 
         const audio = document.createElement('audio');
         audio.src = item.audio;
         audio.controls = true;
-        audio.dataset.playCount = 0;
+        audio.preload = "none";
+
         audio.addEventListener('play', () => {
-          const count = parseInt(audio.dataset.playCount);
-          if (count >= 2) {
+          if (currentAudio && currentAudio !== audio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+          }
+          currentAudio = audio;
+          const key = audio.src;
+          playCounts[key] = (playCounts[key] || 0) + 1;
+          if (playCounts[key] > 2) {
             audio.pause();
             audio.currentTime = 0;
             alert('此題音檔已播放兩次，無法再播放。');
-          } else {
-            audio.dataset.playCount = count + 1;
           }
+        });
+
+        audio.addEventListener('error', () => {
+          const errMsg = document.createElement('div');
+          errMsg.textContent = `⚠️ 無法載入音檔：${audio.src}`;
+          errMsg.style.color = 'red';
+          div.appendChild(errMsg);
         });
 
         div.appendChild(document.createTextNode(`Q${index + 1}: `));
         div.appendChild(audio);
         div.appendChild(document.createElement('br'));
 
-        if (index < 10) {
-          const options = shuffle([item.word, ...shuffle(items.filter(i => i.word !== item.word).map(i => i.word)).slice(0, 3)]);
+        if (index < 10 || index >= 20) {
+          const options = shuffle(
+            index < 10
+              ? [item.word, ...shuffle(items.filter(i => i.word !== item.word)).slice(0, 3).map(i => i.word)]
+              : [item.zh, ...shuffle(items.filter(i => i.zh !== item.zh)).slice(0, 3).map(i => i.zh)]
+          );
           options.forEach(option => {
             const label = document.createElement('label');
             const radio = document.createElement('input');
             radio.type = 'radio';
             radio.name = `answer_${index}`;
             radio.value = option;
+            radio.addEventListener('change', updateProgress);
             label.appendChild(radio);
             label.appendChild(document.createTextNode(option));
             div.appendChild(label);
@@ -136,6 +168,8 @@
           input.type = 'text';
           input.name = `answer_${index}`;
           input.placeholder = 'Type your answer';
+          input.pattern = "[A-Za-z ]+";
+          input.addEventListener('input', updateProgress);
           div.appendChild(input);
         }
 
@@ -145,9 +179,12 @@
         div.appendChild(feedback);
         quizForm.appendChild(div);
       });
+
+      updateProgress();
     }
 
     document.getElementById('submitBtn').addEventListener('click', () => {
+      document.getElementById('submitBtn').disabled = true;
       clearInterval(interval);
       document.getElementById('timer').textContent += '（已提交）';
 
@@ -159,33 +196,33 @@
       let score = 0, correctCount = 0, incorrectCount = 0, unansweredCount = 0;
       let wrongItems = [], wrongWords = [];
 
-      [...choiceItems, ...typingItems].forEach((item, index) => {
-        const radios = document.querySelectorAll(`[name='answer_${index}']`);
+      [...choiceItems, ...typingItems, ...zhItems].forEach((item, index) => {
+        const inputs = document.querySelectorAll(`[name='answer_${index}']`);
         let userAnswer = '';
-        if (radios.length > 1) {
-          const checked = [...radios].find(r => r.checked);
-          if (checked) userAnswer = checked.value.trim().toLowerCase();
-        } else if (radios.length === 1) {
-          userAnswer = radios[0].value.trim().toLowerCase();
+        if (inputs.length > 1) {
+          const checked = [...inputs].find(r => r.checked);
+          if (checked) userAnswer = checked.value.trim();
+        } else if (inputs.length === 1) {
+          userAnswer = inputs[0].value.trim();
         }
 
         const feedback = document.getElementById(`feedback_${index}`);
-        const correctAnswer = item.word.toLowerCase();
+        const correctAnswer = (index < 20) ? item.word : item.zh;
 
         if (!userAnswer) {
           unansweredCount++;
-          feedback.textContent = `? 未作答，正確答案為：${item.word}`;
+          feedback.textContent = `? 未作答，正確答案為：${item.word}（${item.zh}）`;
           feedback.className = 'feedback unanswered';
           wrongItems.push(item);
           wrongWords.push(item.word);
-        } else if (userAnswer === correctAnswer) {
-          score += 5;
+        } else if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+          score += 4;
           correctCount++;
           feedback.textContent = '✅ 答對';
           feedback.className = 'feedback correct';
         } else {
           incorrectCount++;
-          feedback.textContent = `❌ 答錯，正確答案為：${item.word}`;
+          feedback.textContent = `❌ 答錯，正確答案為：${item.word}（${item.zh}）`;
           feedback.className = 'feedback incorrect';
           wrongItems.push(item);
           wrongWords.push(item.word);
@@ -215,43 +252,33 @@
         audio.controls = true;
         div.appendChild(document.createTextNode(`錯題 ${idx + 1}: `));
         div.appendChild(audio);
-        div.appendChild(document.createTextNode(` 正確答案：${item.word}`));
+        div.appendChild(document.createTextNode(` 正確答案：${item.zh}（${item.word}）`));
         review.appendChild(div);
       });
       document.getElementById('reviewSection').classList.remove('hidden');
 
-      // ✅ 傳送資料至 Google Sheets
-      const formData = new FormData();
-      formData.append('userClass', document.getElementById('userClass').value);
-      formData.append('number', document.getElementById('userNumber').value);
-      formData.append('name', document.getElementById('userName').value);
-      formData.append('score', score);
-      formData.append('correct', correctCount);
-      formData.append('incorrect', incorrectCount);
-      formData.append('unanswered', unansweredCount);
-      formData.append('timeSpent', timeSpent);
-      formData.append('wrongWords', wrongWords.join(', '));
+      const payload = {
+        userClass: document.getElementById('userClass').value,
+        number: document.getElementById('userNumber').value,
+        name: document.getElementById('userName').value,
+        score: score,
+        correct: correctCount,
+        incorrect: incorrectCount,
+        unanswered: unansweredCount,
+        timeSpent: timeSpent,
+        wrongWords: wrongWords.join(', ')
+      };
 
-      fetch('https://script.google.com/macros/s/AKfycbyk8f0RUMW2ociqzPfLJmu_kWGSi1BeZQhnA0lBLBMXzy1yyMAuIiGRG_g610SxRSN1/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbwdwpvbDJ325iwjgHhG9PatuKsMpqFNzhtgUuJsNVw2xEic7eDZuFykkN2qpJI_MDKn/exec', {
         method: 'POST',
-        body: formData
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
     });
 
     document.getElementById('retryBtn').addEventListener('click', () => {
-      document.getElementById('quizForm').innerHTML = '';
-      document.getElementById('result').classList.add('hidden');
-      document.getElementById('scoreTable').innerHTML = '';
-      document.getElementById('reviewContent').innerHTML = '';
-      document.getElementById('reviewSection').classList.add('hidden');
-      document.getElementById('userInfo').classList.remove('hidden');
-      document.getElementById('quizSection').classList.add('hidden');
-      document.getElementById('timer').textContent = 'Time left: 15:00';
-      totalTime = 15 * 60;
-      timerStartTime = null;
-      document.getElementById('userClass').value = '';
-      document.getElementById('userNumber').value = '';
-      document.getElementById('userName').value = '';
+      location.reload();
     });
   </script>
 </body>
