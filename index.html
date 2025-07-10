@@ -43,9 +43,10 @@
   </div>
 
   <script>
-    const words = ['a','look at','bear','bird','black sheep','black','blue horse','blue','brown bear','brown','cat','duck','frog','gold','goldfish','gray','green','horse','me','orange','purple cat','purple','red bird','red','sheep','teacher','what','white dog','yellow duck','yellow'];
-    const zh = ['一個','看著','熊','鳥','黑色的綿羊','黑色','藍色的馬','藍色','棕色的熊','棕色','貓咪','鴨子','青蛙','金色','金魚','灰色','綠色','馬','我','橘色','紫色的貓咪','紫色','紅色的鳥','紅色','綿羊','老師','什麼','白色的小狗','黃色的鴨子','黃色'];
+    const words = ['a','look at','bear','bird','black sheep','black','blue horse','blue','brown bear','brown','cat','duck','frog','gold','goldfish','gray','green','horse','me','orange','purple cat','purple','red bird','red','sheep','teacher','what','white dog','yellow duck','yellow','spoon','napkin','juice cup','dessert spoon','knife','water cup','fork','salad plate','bread plate','meal plate','salad fork','left hand','right hand','put in','put out','shake','turn around','light','head','foot'];
+    const zh = ['一個','看著','熊','鳥','黑色的綿羊','黑色','藍色的馬','藍色','棕色的熊','棕色','貓咪','鴨子','青蛙','金色','金魚','灰色','綠色','馬','我','橘色','紫色的貓咪','紫色','紅色的鳥','紅色','綿羊','老師','什麼','白色的小狗','黃色的鴨子','黃色','湯匙','餐巾','果汁杯','甜點湯匙','刀子','水杯','叉子','沙拉盤子','麵包盤子','餐盤','沙拉叉子','左手','右手','放入','拿出來','搖一搖/搖動','轉身/轉一圈','光芒','頭','腳'];
     const items = words.map((w, i) => ({ audio: `chunk_${String(i + 1).padStart(2, '0')}.mp3`, word: w, zh: zh[i] }));
+
 
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -257,7 +258,7 @@
       document.getElementById('reviewSection').classList.remove('hidden');
 
       const payload = {
-        class: document.getElementById('userClass').value,
+        userClass: document.getElementById('userClass').value,
         number: document.getElementById('userNumber').value,
         name: document.getElementById('userName').value,
         score: score,
